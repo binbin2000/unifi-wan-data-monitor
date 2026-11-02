@@ -6,7 +6,7 @@ from urllib.parse import quote, urlsplit
 
 import aiohttp
 
-from .models import Snapshot, discover_interfaces, parse_snapshot
+from .models import Snapshot, discover_interfaces, parse_snapshot, schema_summary
 
 
 class CannotConnect(Exception):
@@ -50,6 +50,7 @@ class UniFiClient:
         self.origin = normalize_url(config["host"])
         self.logged_in = False
         self.official_sites_verified = False
+        self.last_schema_summary = "not_read"
 
     @classmethod
     def create(cls, config: dict) -> "UniFiClient":
@@ -137,6 +138,7 @@ class UniFiClient:
             self.session.cookie_jar.clear()
             await self.login()
             payload = await self._request("GET", path)
+        self.last_schema_summary = schema_summary(payload)
         return payload
 
     async def fetch(self) -> Snapshot:

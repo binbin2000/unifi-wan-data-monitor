@@ -57,6 +57,7 @@ async def test_key_verifies_sites_and_actual_counter_endpoint(payload):
     client = UniFiClient(session, config())
     assert (await client.verify()).rx == 10000000000
     assert client.official_sites_verified
+    assert "wan_mappings=2" in client.last_schema_summary
     assert all(c[0] == "GET" for c in session.calls)
     assert all(c[2]["headers"] == {"X-API-Key": "test-only-key"} for c in session.calls)
     assert all(c[2]["allow_redirects"] is False for c in session.calls)

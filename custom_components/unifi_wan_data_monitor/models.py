@@ -61,11 +61,54 @@ def records(device: dict, key: str) -> list:
     return value
 
 
+def schema_summary(payload: Any) -> str:
+    """Only fixed labels and counts; never echo device keys, identifiers or values."""
+    shape = (
+        "object" if isinstance(payload, dict) else "list" if isinstance(payload, list) else "other"
+    )
+    try:
+        entries = devices(payload)
+    except InvalidData:
+        entries = []
+    ports = mappings = counters = identifiers = malformed = 0
+    for device in entries:
+        identifiers += bool(device.get("mac"))
+        overrides = device.get("ethernet_overrides")
+        table = device.get("port_table")
+        if not isinstance(overrides, list) or not isinstance(table, list):
+            malformed += 1
+        if isinstance(overrides, list):
+            mappings += sum(
+                isinstance(p, dict) and is_wan(p.get("networkgroup")) for p in overrides
+            )
+        if isinstance(table, list):
+            for port in table:
+                if not isinstance(port, dict):
+                    continue
+                ports += 1
+                try:
+                    counter(port.get("rx_bytes"))
+                    counter(port.get("tx_bytes"))
+                except InvalidData:
+                    continue
+                counters += 1
+    return (
+        f"shape={shape}; devices={len(entries)}; with_mac={identifiers}; "
+        f"ports={ports}; rx_tx_pairs={counters}; wan_mappings={mappings}; "
+        f"incomplete_tables={malformed}"
+    )
+
+
 def discover_interfaces(payload: Any) -> list[Snapshot]:
     """Offer only WAN interfaces with real, valid byte counters."""
     found = []
     for device in devices(payload):
-        for override in records(device, "ethernet_overrides"):
+        # APs/switches can have null/absent override tables. They must not prevent
+        # discovery of a different gateway with valid WAN counters.
+        overrides = device.get("ethernet_overrides")
+        if not isinstance(overrides, list):
+            continue
+        for override in overrides:
             if isinstance(override, dict) and is_wan(override.get("networkgroup")):
                 try:
                     found.append(

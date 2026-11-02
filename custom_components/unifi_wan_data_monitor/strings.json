@@ -44,8 +44,9 @@
       "invalid_auth": "Authentication rejected. Use a new local API key or a dedicated local account.",
       "key_no_counters": "The key works for official sites, but cannot read internal port counters. Try local account authentication.",
       "unsupported_endpoint": "This endpoint is unavailable on the console. Check Network version and site.",
-      "invalid_data": "No unambiguous WAN port counters found. Check the site, selected gateway and port mapping.",
-      "cannot_connect": "Connection failed. Check address, permissions, TLS certificate and Network availability."
+      "invalid_data": "WAN counters could not be identified. Diagnostics: {details}. Check site and WAN mapping.",
+      "cannot_connect": "Connection failed. Check address, permissions, TLS certificate and Network availability.",
+      "key_incomplete_data": "The API key works for official sites, but the internal API response contained no readable WAN counters. Try local authentication with a local UniFi account. Diagnostics: {details}."
     },
     "abort": {
       "already_configured": "This WAN is already configured.",

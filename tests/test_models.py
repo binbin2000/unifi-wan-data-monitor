@@ -6,6 +6,7 @@ from custom_components.unifi_wan_data_monitor.models import (
     InvalidData,
     discover_interfaces,
     parse_snapshot,
+    schema_summary,
 )
 
 
@@ -83,3 +84,35 @@ def test_null_tables_are_schema_errors(payload, key):
 def test_null_uplink_is_unknown_not_a_failure(payload):
     payload["5"]["uplink"] = None
     assert parse_snapshot(payload).active_wan is None
+
+
+def test_unrelated_null_overrides_do_not_hide_valid_gateway(payload):
+    unrelated = {"mac": "02:00:00:00:00:ff", "port_table": [], "ethernet_overrides": None}
+    entries = [unrelated, payload["5"]]
+    assert {s.interface for s in discover_interfaces(entries)} == {"eth8", "eth9"}
+
+
+def test_invalid_wan_on_another_device_does_not_hide_valid_gateway(payload):
+    unrelated = deepcopy(payload["5"])
+    unrelated["mac"] = "02:00:00:00:00:ff"
+    unrelated["port_table"] = None
+    assert len(discover_interfaces([unrelated, payload["5"]])) == 2
+
+
+def test_schema_diagnostics_do_not_echo_response_data(payload):
+    payload["secret-root-key"] = {"password": "must-not-leak", "mac": "must-not-leak"}
+    payload["5"]["name"] = "must-not-leak"
+    payload["5"]["token"] = "must-not-leak"
+    summary = schema_summary(payload)
+    assert "devices=1" in summary
+    assert "wan_mappings=2" in summary
+    assert "rx_tx_pairs=3" in summary
+    assert "must-not-leak" not in summary
+    assert "secret-root-key" not in summary
+    assert payload["5"]["mac"] not in summary
+    assert str(payload["5"]["port_table"][2]["rx_bytes"]) not in summary
+
+
+def test_empty_or_unsupported_response_has_safe_zero_device_diagnostic():
+    assert "devices=0" in schema_summary([])
+    assert "devices=0" in schema_summary({"unrecognized": "must-not-leak"})

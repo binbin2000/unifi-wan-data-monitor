@@ -4,7 +4,7 @@ Läsande Home Assistant custom integration för UDM Pro. Välj **valfritt rappor
 
 Utgångspunkt: UniFi Network **10.6.109**, UDM Pro firmware **5.1.34**. Testfixturen visar WAN2 på `eth8` med syntetiska RX/TX-värden. Alla adresser, identifierare, tider och räknare i testdata är exempelvärden. Testdata använder påhittad MAC och innehåller inga cookies, lösenord eller API-nycklar från användaren.
 
-**Status: första utvecklingsversion, 0.1.0.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
+**Status: utvecklingsversion, 0.1.1.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
 
 ## 1. Verifiera autentisering och endpoint först
 
@@ -124,6 +124,10 @@ All trafikläsning sker med GET. Enda POST är lokal autentisering. Inga tjänst
 Nyckel eller lösenord sparas i HA:s vanliga config entry, **inte i källkoden**. HA:s `.storage` och säkerhetskopior innehåller känsliga uppgifter; skydda åtkomsten. Sessionscookies lever bara i integrationens egen minnessession och stängs vid unload. Fel och loggar innehåller aldrig råa svarsbodyer, headers eller inloggningsuppgifter. API-nyckelmetoden använder en cookie-fri session.
 
 ## Testa och felsöka
+
+Version 0.1.1 gör WAN-upptäckten tåligare när andra enheter har tomma gränssnittstabeller. Om API-nyckeln fungerar för officiella sites men interna data inte ger WAN-räknare visas ett särskilt meddelande: prova då `local` med ett separat lokalt UniFi-konto. Det innebär inte att inloggning med lokalt konto garanterat ger ytterligare rättigheter.
+
+Vid schemafel visas dessutom en säker diagnostikrad med endast datatyp och antal enheter, portar, giltiga RX/TX-par och WAN-mappningar. Den innehåller inga adresser, identifierare, räknarvärden, råa svar eller hemligheter. Kopiera den raden om felet kvarstår. Nollor i diagnostikens antal är **inte** nollställda trafiksensorer; konfigurationen stoppas fortfarande om giltiga räknare saknas.
 
 ```shell
 python -m pip install -r requirements-test.txt

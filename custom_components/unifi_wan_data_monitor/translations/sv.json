@@ -44,8 +44,9 @@
       "invalid_auth": "Autentiseringen nekades. Använd en ny lokal API-nyckel eller ett separat lokalt konto.",
       "key_no_counters": "Nyckeln fungerar för officiella sites men inte för interna porträknare. Prova lokalt konto.",
       "unsupported_endpoint": "Endpointen saknas på konsolen. Kontrollera Network-version och site.",
-      "invalid_data": "Inga entydiga WAN-porträknare hittades. Kontrollera site, gateway och portmappning.",
-      "cannot_connect": "Anslutningen misslyckades. Kontrollera adress, behörigheter, TLS-certifikat och Network."
+      "invalid_data": "WAN-räknare kunde inte identifieras. Diagnostik: {details}. Kontrollera site och WAN-mappning.",
+      "cannot_connect": "Anslutningen misslyckades. Kontrollera adress, behörigheter, TLS-certifikat och Network.",
+      "key_incomplete_data": "API-nyckeln fungerar för officiella sites, men svaret från det interna API:et gav inga läsbara WAN-räknare. Prova autentiseringsmetoden local med ett lokalt UniFi-konto. Diagnostik: {details}."
     },
     "abort": {
       "already_configured": "Detta WAN övervakas redan.",

@@ -83,6 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_connection(self, user_input=None):
         errors = {}
+        details = "not_read"
         existing = None
         if self.source in ("reauth", "reconfigure"):
             existing = (
@@ -117,7 +118,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except UnsupportedEndpoint:
                 errors["base"] = "unsupported_endpoint"
             except InvalidData:
-                errors["base"] = "invalid_data"
+                details = client.last_schema_summary if client else "not_read"
+                errors["base"] = (
+                    "key_incomplete_data"
+                    if client and client.official_sites_verified
+                    else "invalid_data"
+                )
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             finally:
@@ -132,7 +138,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.connection_data = data
                 return await self.async_step_interface()
         return self.async_show_form(
-            step_id="connection", data_schema=connection_schema(defaults, self.mode), errors=errors
+            step_id="connection",
+            data_schema=connection_schema(defaults, self.mode),
+            errors=errors,
+            description_placeholders={"details": details},
         )
 
     async def async_step_interface(self, user_input=None):

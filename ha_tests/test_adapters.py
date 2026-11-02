@@ -98,6 +98,37 @@ async def test_coordinator_persists_and_does_not_advance_after_disk_error(hass, 
     assert coordinator.accounting.state["last"]["rx"] == baseline
 
 
+@pytest.mark.parametrize(
+    "official_verified,expected",
+    [
+        (True, "key_incomplete_data"),
+        (False, "invalid_data"),
+    ],
+)
+async def test_flow_explains_missing_counter_schema(hass, official_verified, expected):
+    from custom_components.unifi_wan_data_monitor.models import InvalidData
+
+    flow = ConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": "user"}
+    client = MagicMock(
+        discover=AsyncMock(side_effect=InvalidData),
+        close=AsyncMock(),
+        official_sites_verified=official_verified,
+        last_schema_summary="shape=list; devices=0",
+    )
+    with patch(
+        "custom_components.unifi_wan_data_monitor.config_flow.UniFiClient.create",
+        return_value=client,
+    ):
+        result = await flow.async_step_connection(
+            {"host": "192.0.2.1", "site": "default", "api_key": "test-key", "verify_ssl": True}
+        )
+    assert result["errors"]["base"] == expected
+    assert result["description_placeholders"]["details"] == "shape=list; devices=0"
+    client.close.assert_awaited_once()
+
+
 async def test_authentication_requests_reauth(hass):
     coordinator = WanCoordinator(hass, entry(), MagicMock(fetch=AsyncMock(side_effect=InvalidAuth)))
     with pytest.raises(ConfigEntryAuthFailed):

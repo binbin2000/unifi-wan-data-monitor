@@ -1,0 +1,71 @@
+{
+  "title": "UniFi WAN Data Monitor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Autentisering",
+        "description": "Välj api_key eller local. Inga browser-cookies används.",
+        "data": {
+          "auth_mode": "Autentisering (api_key eller lokalt konto)"
+        }
+      },
+      "connection": {
+        "title": "Anslut till UniFi",
+        "description": "Ange nya lokala uppgifter. Anslutningen måste ge läsbara WAN-räknare. För självsignerat certifikat: avmarkera TLS-verifiering uttryckligen.",
+        "data": {
+          "host": "Konsolens HTTPS-adress",
+          "site": "Network-site (vanligtvis default)",
+          "verify_ssl": "Verifiera TLS-certifikat",
+          "api_key": "Lokal API-nyckel",
+          "username": "Lokalt användarnamn",
+          "password": "Lokalt lösenord"
+        }
+      },
+      "interface": {
+        "title": "Välj WAN-interface",
+        "description": "Lägg till en post per WAN om du vill övervaka flera.",
+        "data": {
+          "wan_interface": "WAN-interface"
+        }
+      },
+      "quota": {
+        "title": "Månadspott",
+        "description": "100 GB avser 100 miljarder byte, RX + TX. Känd startförbrukning används bara vid första mätningen. Byte av brytdag nollställer den lokala periodens förbrukning.",
+        "data": {
+          "quota_gb": "Pott per period (decimal GB)",
+          "billing_day": "Brytdag (1–31)",
+          "poll_interval": "Uppdateringsintervall (sekunder)",
+          "initial_used_gb": "Känd förbrukning före första provet (GB)"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Ange en HTTPS-adress till konsolen utan inloggningsuppgifter eller sökväg.",
+      "invalid_auth": "Autentiseringen nekades. Använd en ny lokal API-nyckel eller ett separat lokalt konto.",
+      "key_no_counters": "Nyckeln fungerar för officiella sites men inte för interna porträknare. Prova lokalt konto.",
+      "unsupported_endpoint": "Endpointen saknas på konsolen. Kontrollera Network-version och site.",
+      "invalid_data": "Inga entydiga WAN-porträknare hittades. Kontrollera site, gateway och portmappning.",
+      "cannot_connect": "Anslutningen misslyckades. Kontrollera adress, behörigheter, TLS-certifikat och Network."
+    },
+    "abort": {
+      "already_configured": "Detta WAN övervakas redan.",
+      "unique_id_mismatch": "Gateway och interface måste vara samma som tidigare.",
+      "reauth_successful": "Inloggningsuppgifterna uppdaterades.",
+      "reconfigure_successful": "Anslutningen uppdaterades."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Månadspott",
+        "description": "100 GB avser 100 miljarder byte, RX + TX. Känd startförbrukning används bara vid första mätningen. Byte av brytdag nollställer den lokala periodens förbrukning.",
+        "data": {
+          "quota_gb": "Pott per period (decimal GB)",
+          "billing_day": "Brytdag (1–31)",
+          "poll_interval": "Uppdateringsintervall (sekunder)",
+          "initial_used_gb": "Känd förbrukning före första provet (GB)"
+        }
+      }
+    }
+  }
+}

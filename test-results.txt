@@ -1,0 +1,15 @@
+UniFi WAN Data Monitor 0.1.0 — verification 2026-11-02
+
+ruff check: All checks passed.
+Protocol/accounting/package tests: 60 passed in 0.44s.
+Actual Home Assistant 2025.3.4 adapter tests: 14 passed in 1.10s.
+Total: 74 passing tests.
+
+One upstream Home Assistant/aiohttp deprecation warning; no failed tests.
+See VALIDATION.md for environment, dependency differences and live-test limits.
+
+Physical console, unauthenticated read-only probes:
+  Official integration sites: HTTP 401 (JSON).
+  Internal v2 device endpoint: HTTP 401.
+Authenticated live counter access: NOT VERIFIED (no fresh credentials available).
+HA OS deployment / Linux workflow / HACS publication: NOT PERFORMED.

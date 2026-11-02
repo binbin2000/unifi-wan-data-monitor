@@ -1,0 +1,17 @@
+{
+  "5": {
+    "mac": "02:00:00:00:00:01", "name": "UDM-Pro test fixture", "model": "UDMPRO",
+    "version": "5.1.34.34103", "uptime": 86400, "last_seen": 1700000000,
+    "ethernet_overrides": [
+      {"ifname": "eth9", "networkgroup": "WAN"},
+      {"ifname": "eth8", "networkgroup": "WAN2"},
+      {"ifname": "eth0", "networkgroup": "LAN"}
+    ],
+    "uplink": {"name": "eth8", "port_idx": 9, "type": "wire"},
+    "port_table": [
+      {"ifname": "eth0", "rx_bytes": 1234567, "tx_bytes": 7654321, "up": true},
+      {"ifname": "eth9", "rx_bytes": 0, "tx_bytes": 0, "up": false},
+      {"ifname": "eth8", "rx_bytes": 10000000000, "tx_bytes": 500000000, "up": true}
+    ]
+  }
+}

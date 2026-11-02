@@ -1,0 +1,71 @@
+{
+  "title": "UniFi WAN Data Monitor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Authentication",
+        "description": "Choose api_key or local. Browser cookies are never used.",
+        "data": {
+          "auth_mode": "Authentication (api_key or local account)"
+        }
+      },
+      "connection": {
+        "title": "Connect to UniFi",
+        "description": "Enter fresh local credentials. Readable WAN counters are required. For self-signed certificates, explicitly disable TLS verification.",
+        "data": {
+          "host": "Console HTTPS address",
+          "site": "Network site (usually default)",
+          "verify_ssl": "Verify TLS certificate",
+          "api_key": "Local API key",
+          "username": "Local account username",
+          "password": "Local account password"
+        }
+      },
+      "interface": {
+        "title": "Select WAN interface",
+        "description": "Add one entry per WAN to monitor multiple interfaces.",
+        "data": {
+          "wan_interface": "WAN interface"
+        }
+      },
+      "quota": {
+        "title": "Billing cycle allowance",
+        "description": "100 GB means 100 billion bytes, RX + TX. Known initial usage is used only at the first sample. Changing billing day clears the local cycle usage.",
+        "data": {
+          "quota_gb": "Billing cycle allowance (decimal GB)",
+          "billing_day": "Billing cycle start day (1–31)",
+          "poll_interval": "Update interval (seconds)",
+          "initial_used_gb": "Known usage before first sample (GB)"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Enter an HTTPS console address without credentials or a path.",
+      "invalid_auth": "Authentication rejected. Use a new local API key or a dedicated local account.",
+      "key_no_counters": "The key works for official sites, but cannot read internal port counters. Try local account authentication.",
+      "unsupported_endpoint": "This endpoint is unavailable on the console. Check Network version and site.",
+      "invalid_data": "No unambiguous WAN port counters found. Check the site, selected gateway and port mapping.",
+      "cannot_connect": "Connection failed. Check address, permissions, TLS certificate and Network availability."
+    },
+    "abort": {
+      "already_configured": "This WAN is already configured.",
+      "unique_id_mismatch": "Gateway and interface must match the existing entry.",
+      "reauth_successful": "Authentication updated.",
+      "reconfigure_successful": "Connection updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Billing cycle allowance",
+        "description": "100 GB means 100 billion bytes, RX + TX. Known initial usage is used only at the first sample. Changing billing day clears the local cycle usage.",
+        "data": {
+          "quota_gb": "Billing cycle allowance (decimal GB)",
+          "billing_day": "Billing cycle start day (1–31)",
+          "poll_interval": "Update interval (seconds)",
+          "initial_used_gb": "Known usage before first sample (GB)"
+        }
+      }
+    }
+  }
+}

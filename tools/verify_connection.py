@@ -40,7 +40,7 @@ async def main(args):
     client = UniFiClient.create(config)
     try:
         snapshots = await client.discover()
-        print("Authentication and internal device endpoint verified.")
+        print(f"Authentication and counters verified; endpoint={client.device_endpoint}.")
         for snap in snapshots:
             print(
                 f"{snap.networkgroup}/{snap.interface}: RX={snap.rx} B, TX={snap.tx} B; "
@@ -59,6 +59,7 @@ async def main(args):
         print("Endpoint unavailable on this console/version.")
     except InvalidData:
         print("Endpoint answered, but no unambiguous WAN byte counters were found.")
+        print(client.last_schema_summary)
     except CannotConnect:
         print("Connection/TLS/HTTP/JSON failed. No response body was logged.")
     finally:

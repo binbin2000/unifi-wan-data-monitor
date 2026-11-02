@@ -165,3 +165,18 @@ def test_backwards_clock_and_source_change(payload):
     )
     assert a.state["month_rx"] == 0
     assert a.state["note"] == "source_changed"
+
+
+def test_changing_endpoint_rebaselines_instead_of_mixing_counters(payload):
+    s = parse_snapshot(payload)
+    a = Accounting()
+    a.update(s, NOW, 1, 60)
+    a.update(
+        replace(s, counter_source="classic", rx=s.rx + 9000000), NOW + timedelta(seconds=60), 1, 60
+    )
+    assert a.state["month_rx"] == 0
+    assert a.state["note"] == "source_changed"
+    a.update(
+        replace(s, counter_source="classic", rx=s.rx + 9000100), NOW + timedelta(seconds=120), 1, 60
+    )
+    assert a.state["month_rx"] == 100

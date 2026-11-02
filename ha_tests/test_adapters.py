@@ -35,6 +35,7 @@ async def test_config_flow_discovers_selects_and_creates_entry(hass, payload):
     assert (await flow.async_step_user({"auth_mode": "local"}))["step_id"] == "connection"
     snap = parse_snapshot(payload)
     client = MagicMock(
+        device_endpoint="v2",
         discover=AsyncMock(
             return_value=[snap, replace(snap, interface="eth9", networkgroup="WAN")]
         ),
@@ -58,6 +59,7 @@ async def test_config_flow_discovers_selects_and_creates_entry(hass, payload):
     assert result["step_id"] == "quota"
     result = await flow.async_step_quota(DEFAULTS.copy())
     assert result["data"]["interface"] == "eth9"
+    assert result["data"]["device_endpoint"] == "v2"
     assert result["options"]["quota_gb"] == 100
     client.close.assert_awaited_once()
 
@@ -127,6 +129,42 @@ async def test_flow_explains_missing_counter_schema(hass, official_verified, exp
     assert result["errors"]["base"] == expected
     assert result["description_placeholders"]["details"] == "shape=list; devices=0"
     client.close.assert_awaited_once()
+
+
+async def test_connection_error_retains_address_site_tls_and_username_but_not_password(hass):
+    from custom_components.unifi_wan_data_monitor.models import InvalidData
+
+    flow = ConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": "user"}
+    flow.mode = "local"
+    client = MagicMock(
+        discover=AsyncMock(side_effect=InvalidData),
+        close=AsyncMock(),
+        official_sites_verified=False,
+        last_schema_summary="devices=0",
+    )
+    with patch(
+        "custom_components.unifi_wan_data_monitor.config_flow.UniFiClient.create",
+        return_value=client,
+    ):
+        result = await flow.async_step_connection(
+            {
+                "host": "https://console.example.test",
+                "site": "test-site",
+                "username": "test-user",
+                "password": "do-not-retain",
+                "verify_ssl": False,
+            }
+        )
+    keys = {str(key): key for key in result["data_schema"].schema}
+    assert keys["host"].default() == "https://console.example.test"
+    assert keys["site"].default() == "test-site"
+    assert keys["username"].default() == "test-user"
+    assert keys["verify_ssl"].default() is False
+    import voluptuous as vol
+
+    assert keys["password"].default is vol.UNDEFINED
 
 
 async def test_authentication_requests_reauth(hass):

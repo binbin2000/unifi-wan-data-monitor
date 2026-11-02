@@ -81,6 +81,7 @@ class WanSensor(WanEntity, SensorEntity):
         if self.key not in ("month_used", "coverage"):
             return None
         return {
+            "counter_source": self.snapshot.counter_source,
             "coverage_note": self.accounting["note"],
             "counter_reset_count": self.accounting["resets"],
             "cycle_rx_bytes": self.accounting["month_rx"],

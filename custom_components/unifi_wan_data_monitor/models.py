@@ -23,22 +23,40 @@ class Snapshot:
     active_wan: str | None
     reported_at: int | None = None
     networkgroup: str = "WAN2"
+    counter_source: str = "v2"
 
 
 def devices(payload: Any) -> list[dict]:
-    """Accept lists, a data wrapper, a single device or numeric-keyed maps."""
-    if isinstance(payload, dict):
-        if "meta" in payload:
-            if not isinstance(payload["meta"], dict) or payload["meta"].get("rc") != "ok":
-                raise InvalidData("API reported an error")
-        if "data" in payload:
-            return devices(payload["data"])
-        if "port_table" in payload:
-            return [payload]
-        payload = list(payload.values())
-    if not isinstance(payload, list):
+    """Find complete device objects inside bounded JSON containers.
+
+    Wrapper names and numeric device-map keys are not device schema. Once a
+    port_table is found, stop descending into that device's configuration.
+    """
+    if not isinstance(payload, (list, dict)):
         raise InvalidData("Expected device list")
-    return [d for d in payload if isinstance(d, dict) and "port_table" in d]
+    found = []
+    pending = [(payload, 0)]
+    visited = 0
+    while pending:
+        node, depth = pending.pop()
+        visited += 1
+        if visited > 10000 or depth > 8:
+            raise InvalidData("Device response exceeds traversal limit")
+        if isinstance(node, dict):
+            if "meta" in node:
+                meta = node["meta"]
+                if not isinstance(meta, dict) or meta.get("rc") != "ok":
+                    raise InvalidData("API reported an error")
+            if "port_table" in node:
+                found.append(node)
+                continue
+            values = node.values()
+        elif isinstance(node, list):
+            values = node
+        else:
+            continue
+        pending.extend((value, depth + 1) for value in values if isinstance(value, (dict, list)))
+    return found
 
 
 def counter(value: Any) -> int:
@@ -95,7 +113,9 @@ def schema_summary(payload: Any) -> str:
     return (
         f"shape={shape}; devices={len(entries)}; with_mac={identifiers}; "
         f"ports={ports}; rx_tx_pairs={counters}; wan_mappings={mappings}; "
-        f"incomplete_tables={malformed}"
+        f"incomplete_tables={malformed}; "
+        f"root_objects={sum(isinstance(v, dict) for v in payload.values()) if isinstance(payload, dict) else 0}; "
+        f"root_lists={sum(isinstance(v, list) for v in payload.values()) if isinstance(payload, dict) else 0}"
     )
 
 

@@ -154,3 +154,62 @@ def test_origin_validation(url):
 
 def test_origin_defaults_to_https():
     assert normalize_url("192.0.2.1/") == "https://192.0.2.1"
+
+
+async def test_discovery_uses_classic_when_v2_has_no_device_records(payload):
+    session = Session(
+        [
+            Response(payload={"data": []}),
+            Response(payload={"devices": []}),
+            Response(payload={"meta": {"rc": "ok"}, "data": [payload["5"]]}),
+            Response(payload=payload),
+        ]
+    )
+    client = UniFiClient(session, config())
+    snapshots = await client.discover()
+    assert client.device_endpoint == "classic"
+    assert {s.counter_source for s in snapshots} == {"classic"}
+    assert session.calls[2][1].endswith("/proxy/network/api/s/default/stat/device")
+    assert (await client.fetch()).counter_source == "classic"
+    assert session.calls[-1][1].endswith("/stat/device")
+    assert all(c[0] == "GET" for c in session.calls)
+
+
+async def test_discovery_does_not_fallback_when_v2_is_valid(payload):
+    session = Session(
+        [Response(payload={"data": []}), Response(payload={"data": {"devices": [payload["5"]]}})]
+    )
+    client = UniFiClient(session, config())
+    assert len(await client.discover()) == 2
+    assert client.device_endpoint == "v2"
+    assert len(session.calls) == 2
+
+
+async def test_discovery_combines_safe_diagnostics_when_both_endpoints_lack_counters():
+    from custom_components.unifi_wan_data_monitor.models import InvalidData
+
+    session = Session(
+        [
+            Response(payload={"data": []}),
+            Response(payload={"private": "do-not-echo"}),
+            Response(payload={"data": []}),
+        ]
+    )
+    client = UniFiClient(session, config())
+    with pytest.raises(InvalidData):
+        await client.discover()
+    assert "endpoint=v2" in client.last_schema_summary
+    assert "endpoint=classic" in client.last_schema_summary
+    assert "do-not-echo" not in client.last_schema_summary
+    assert "private" not in client.last_schema_summary
+
+
+async def test_polling_saved_endpoint_never_tries_another_source():
+    from custom_components.unifi_wan_data_monitor.models import InvalidData
+
+    session = Session([Response(payload={"data": []})])
+    client = UniFiClient(session, config() | {"device_endpoint": "classic"})
+    with pytest.raises(InvalidData):
+        await client.fetch()
+    assert len(session.calls) == 1
+    assert session.calls[0][1].endswith("/stat/device")

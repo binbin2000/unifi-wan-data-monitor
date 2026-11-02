@@ -72,7 +72,7 @@ class Accounting:
                 coverage="partial",
                 note="billing_day_changed" if changed_day else "cycle_boundary",
             )
-        source = f"{snap.mac}/{snap.interface}"
+        source = f"{snap.mac}/{snap.interface}/{snap.counter_source}"
         if previous is None:
             state["note"] = "first_sample"
         elif previous["source"] != source:

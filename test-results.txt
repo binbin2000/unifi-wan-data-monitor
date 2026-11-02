@@ -1,12 +1,12 @@
-UniFi WAN Data Monitor 0.1.1 — verification 2026-11-02
+UniFi WAN Data Monitor 0.1.2 — verification 2026-11-02
 
 ruff check: All checks passed.
-Protocol/accounting/package tests: 64 passed in 0.45s.
-Actual Home Assistant 2025.3.4 adapter tests: 16 passed in 1.08s.
-Total: 80 passing tests.
+Protocol/accounting/package tests: 76 passed.
+Actual Home Assistant 2025.3.4 adapter tests: 17 passed.
+Total: 93 passing tests.
 
 One upstream Home Assistant/aiohttp deprecation warning; no failed tests.
 All test fixture data is synthetic.
-Physical UDM: authenticated access is not verified.
-New regression cases: unrelated malformed interface tables, diagnostics redaction,
-API key incomplete-data explanation and config-flow diagnostic placeholders.
+Physical UDM: authenticated counter access is not verified.
+New cases cover nested device objects, classic endpoint discovery, pinned polling
+sources, source-change accounting and retention of non-secret form fields.

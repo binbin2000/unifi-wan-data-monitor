@@ -1,12 +1,13 @@
 """Read-only UniFi client with isolated, fresh session authentication."""
 
 import asyncio
+from dataclasses import replace
 import json
 from urllib.parse import quote, urlsplit
 
 import aiohttp
 
-from .models import Snapshot, discover_interfaces, parse_snapshot, schema_summary
+from .models import InvalidData, Snapshot, discover_interfaces, parse_snapshot, schema_summary
 
 
 class CannotConnect(Exception):
@@ -51,6 +52,7 @@ class UniFiClient:
         self.logged_in = False
         self.official_sites_verified = False
         self.last_schema_summary = "not_read"
+        self.device_endpoint = config.get("device_endpoint", "v2")
 
     @classmethod
     def create(cls, config: dict) -> "UniFiClient":
@@ -120,14 +122,20 @@ class UniFiClient:
         )
         self.logged_in = True
 
-    async def _fetch_payload(self):
+    async def _fetch_payload(self, endpoint=None):
         if self.config["auth_mode"] == "local" and not self.logged_in:
             await self.login()
         site = quote(self.config.get("site", "default"), safe="")
-        path = (
-            f"/proxy/network/v2/api/site/{site}/device"
-            "?separateUnmanaged=true&includeTrafficUsage=true"
-        )
+        endpoint = endpoint or self.device_endpoint
+        if endpoint == "classic":
+            path = f"/proxy/network/api/s/{site}/stat/device"
+        elif endpoint == "v2":
+            path = (
+                f"/proxy/network/v2/api/site/{site}/device"
+                "?separateUnmanaged=true&includeTrafficUsage=true"
+            )
+        else:
+            raise UnsupportedEndpoint("Unknown device endpoint")
         try:
             payload = await self._request("GET", path)
         except InvalidAuth:
@@ -138,14 +146,17 @@ class UniFiClient:
             self.session.cookie_jar.clear()
             await self.login()
             payload = await self._request("GET", path)
-        self.last_schema_summary = schema_summary(payload)
+        self.last_schema_summary = f"endpoint={endpoint}; " + schema_summary(payload)
         return payload
 
     async def fetch(self) -> Snapshot:
-        return parse_snapshot(
-            await self._fetch_payload(),
-            self.config.get("gateway_mac", ""),
-            self.config.get("interface", "eth8"),
+        return replace(
+            parse_snapshot(
+                await self._fetch_payload(),
+                self.config.get("gateway_mac", ""),
+                self.config.get("interface", "eth8"),
+            ),
+            counter_source=self.device_endpoint,
         )
 
     async def verify(self) -> Snapshot:
@@ -162,4 +173,21 @@ class UniFiClient:
 
     async def discover(self) -> list[Snapshot]:
         await self.verify_official_sites()
-        return discover_interfaces(await self._fetch_payload())
+        summaries = []
+        # Selection is allowed during initial discovery only. Polling/reauth use
+        # the saved endpoint and never silently swap cumulative counter sources.
+        endpoints = (
+            [self.device_endpoint] if "device_endpoint" in self.config else ["v2", "classic"]
+        )
+        for endpoint in endpoints:
+            try:
+                snapshots = discover_interfaces(await self._fetch_payload(endpoint))
+            except UnsupportedEndpoint:
+                summaries.append(f"endpoint={endpoint}; unavailable")
+            except InvalidData:
+                summaries.append(self.last_schema_summary)
+            else:
+                self.device_endpoint = endpoint
+                return [replace(snap, counter_source=endpoint) for snap in snapshots]
+        self.last_schema_summary = " | ".join(summaries)
+        raise InvalidData("No readable WAN counters from device endpoints")

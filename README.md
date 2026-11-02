@@ -4,7 +4,7 @@ Läsande Home Assistant custom integration för UDM Pro. Välj **valfritt rappor
 
 Utgångspunkt: UniFi Network **10.6.109**, UDM Pro firmware **5.1.34**. Testfixturen visar WAN2 på `eth8` med syntetiska RX/TX-värden. Alla adresser, identifierare, tider och räknare i testdata är exempelvärden. Testdata använder påhittad MAC och innehåller inga cookies, lösenord eller API-nycklar från användaren.
 
-**Status: utvecklingsversion, 0.1.1.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
+**Status: utvecklingsversion, 0.1.2.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
 
 ## 1. Verifiera autentisering och endpoint först
 
@@ -15,11 +15,15 @@ Använd en **ny lokal API-nyckel** från din konsol, eller ett separat **lokalt 
 | API-nyckel | `GET /proxy/network/integration/v1/sites` med `X-API-Key`, därefter den interna device-endpointen med samma nyckel |
 | Lokalt konto | Ny egen session via `POST /api/auth/login`, därefter den interna device-endpointen |
 
-Intern endpoint:
+Primär intern endpoint:
 
 ```text
 GET /proxy/network/v2/api/site/default/device?separateUnmanaged=true&includeTrafficUsage=true
 ```
+
+Från v0.1.2: om v2-endpointen saknas eller inte ger giltiga WAN-räknare provas också `GET /proxy/network/api/s/default/stat/device`, med samma autentisering. Enhetsobjekt kan ligga inuti nästlade JSON-listor eller objekt. Giltiga `port_table`-räknare, MAC och uttrycklig WAN-mappning krävs fortfarande. Ingen global gatewayräknare eller hastighetsuppskattning används som ersättning.
+
+Vald endpoint sparas i konfigurationsposten och används därefter vid polling och återautentisering. Den byts inte automatiskt vid ett driftfel. Räknarnas källidentitet omfattar endpointen; äldre sparade baslinjer återställs försiktigt vid första provet efter v0.1.2, medan redan summerad förbrukning behålls. `counter_source` visas som attribut på period- och täckningssensorerna.
 
 Det officiella sites-anropet är bara ett autentiseringstest. Det bevisar **inte** åtkomst till `port_table`. Ingen fallback uppskattar bytes från hastighet eller från hela gatewayens globala räknare. Om nyckeln fungerar för sites men nekas för device-anropet visas ett särskilt fel; välj då lokalt konto. Integrationens session skapas i minnet från den nya inloggningen, aldrig från inmatade cookies, CSRF-token eller browser-export.
 
@@ -124,6 +128,8 @@ All trafikläsning sker med GET. Enda POST är lokal autentisering. Inga tjänst
 Nyckel eller lösenord sparas i HA:s vanliga config entry, **inte i källkoden**. HA:s `.storage` och säkerhetskopior innehåller känsliga uppgifter; skydda åtkomsten. Sessionscookies lever bara i integrationens egen minnessession och stängs vid unload. Fel och loggar innehåller aldrig råa svarsbodyer, headers eller inloggningsuppgifter. API-nyckelmetoden använder en cookie-fri session.
 
 ## Testa och felsöka
+
+Version 0.1.2 behåller adress, site, TLS-val och användarnamn i formuläret efter ett misslyckat försök. Lösenord och API-nyckel förifylls inte. Om båda device-endpointarna saknar giltiga WAN-räknare visas en separat, värderensad diagnostikrad för vardera endpointen. Det lokala verktyget `verify_connection.py` skriver också denna sammanfattning vid schemafel.
 
 Version 0.1.1 gör WAN-upptäckten tåligare när andra enheter har tomma gränssnittstabeller. Om API-nyckeln fungerar för officiella sites men interna data inte ger WAN-räknare visas ett särskilt meddelande: prova då `local` med ett separat lokalt UniFi-konto. Det innebär inte att inloggning med lokalt konto garanterat ger ytterligare rättigheter.
 

@@ -116,3 +116,33 @@ def test_schema_diagnostics_do_not_echo_response_data(payload):
 def test_empty_or_unsupported_response_has_safe_zero_device_diagnostic():
     assert "devices=0" in schema_summary([])
     assert "devices=0" in schema_summary({"unrecognized": "must-not-leak"})
+
+
+@pytest.mark.parametrize(
+    "wrap",
+    [
+        lambda d: {"data": {"devices": [d]}},
+        lambda d: {"devices": [d]},
+    lambda d: {"data": {"count": 1}, "devices": [d]},
+        lambda d: {"result": {"items": {"opaque-device-id": d}}},
+        lambda d: [{"devices": [d]}],
+    ],
+)
+def test_nested_device_containers(payload, wrap):
+    wrapped = wrap(payload["5"])
+    assert parse_snapshot(wrapped).rx == 10000000000
+    assert len(discover_interfaces(wrapped)) == 2
+    assert "devices=1" in schema_summary(wrapped)
+
+
+def test_excessively_nested_payload_fails_closed():
+    nested = []
+    for _ in range(12):
+        nested = {"wrapper": nested}
+    with pytest.raises(InvalidData):
+        discover_interfaces(nested)
+
+
+def test_error_envelope_cannot_supply_nested_devices(payload):
+    with pytest.raises(InvalidData):
+        parse_snapshot({"meta": {"rc": "error"}, "devices": [payload["5"]]})

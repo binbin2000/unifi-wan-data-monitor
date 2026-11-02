@@ -13,7 +13,7 @@ def test_package_metadata_and_translations():
     assert manifest["domain"] == COMPONENT.name
     assert manifest["config_flow"] is True
     assert manifest["iot_class"] == "local_polling"
-    assert manifest["version"] == "0.1.1"
+    assert manifest["version"] == "0.1.2"
     assert (COMPONENT / "brand/icon.png").is_file()
     keys = {
         "invalid_host",

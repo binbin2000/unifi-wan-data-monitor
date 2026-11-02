@@ -91,8 +91,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if self.source == "reauth"
                 else self._get_reconfigure_entry()
             )
-        defaults = existing.data if existing else {}
+        defaults = dict(existing.data) if existing else {}
         if user_input is not None:
+            # Keep non-secret fields after errors, without prepopulating secrets.
+            defaults.update(
+                {
+                    key: user_input[key]
+                    for key in ("host", "site", "verify_ssl", "username")
+                    if key in user_input
+                }
+            )
             data = dict(user_input, auth_mode=self.mode)
             client = None
             try:
@@ -102,11 +110,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if existing:
                     data["gateway_mac"] = existing.data["gateway_mac"]
                     data["interface"] = existing.data["interface"]
+                    data["device_endpoint"] = existing.data.get("device_endpoint", "v2")
                 client = UniFiClient.create(data)
                 if existing:
                     snap = await client.verify()
                 else:
                     self.interfaces = await client.discover()
+                    data["device_endpoint"] = client.device_endpoint
             except ValueError:
                 errors["host"] = "invalid_host"
             except InvalidAuth:

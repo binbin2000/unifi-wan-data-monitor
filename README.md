@@ -4,7 +4,7 @@ Läsande Home Assistant custom integration för UDM Pro. Välj **valfritt rappor
 
 Utgångspunkt: UniFi Network **10.6.109**, UDM Pro firmware **5.1.34**. Testfixturen visar WAN2 på `eth8` med syntetiska RX/TX-värden. Alla adresser, identifierare, tider och räknare i testdata är exempelvärden. Testdata använder påhittad MAC och innehåller inga cookies, lösenord eller API-nycklar från användaren.
 
-**Status: utvecklingsversion, 0.1.2.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
+**Status: utvecklingsversion, 0.1.3.** Enheten svarade HTTP 401 på det officiella sites-anropet utan autentisering 2026-11-02. Autentiserad åtkomst till portbytes är **inte verifierad mot den fysiska UDM:en**. Konfigurationsflödet kräver därför ett lyckat anrop och giltiga WAN-räknare innan det tillåter installation. Se `VALIDATION.md` för utförda tester och återstående driftsprov.
 
 ## 1. Verifiera autentisering och endpoint först
 
@@ -128,6 +128,8 @@ All trafikläsning sker med GET. Enda POST är lokal autentisering. Inga tjänst
 Nyckel eller lösenord sparas i HA:s vanliga config entry, **inte i källkoden**. HA:s `.storage` och säkerhetskopior innehåller känsliga uppgifter; skydda åtkomsten. Sessionscookies lever bara i integrationens egen minnessession och stängs vid unload. Fel och loggar innehåller aldrig råa svarsbodyer, headers eller inloggningsuppgifter. API-nyckelmetoden använder en cookie-fri session.
 
 ## Testa och felsöka
+
+Version 0.1.3 använder samma text som synligt och inskickat WAN-val. Upp till sex WAN visas som radioknappar; längre listor använder dropdown. Lagrade gateway- och interface-ID:n ändras inte. Regressionstestet går genom HA:s serialisering och schema-validering, inklusive standardval och varje visat alternativ. CI testar både HA 2025.3.4 och 2026.10.1.
 
 Version 0.1.2 behåller adress, site, TLS-val och användarnamn i formuläret efter ett misslyckat försök. Lösenord och API-nyckel förifylls inte. Om båda device-endpointarna saknar giltiga WAN-räknare visas en separat, värderensad diagnostikrad för vardera endpointen. Det lokala verktyget `verify_connection.py` skriver också denna sammanfattning vid schemafel.
 

@@ -1,12 +1,10 @@
-UniFi WAN Data Monitor 0.1.2 — verification 2026-11-02
+UniFi WAN Data Monitor 0.1.3 — verification 2026-11-06
 
-ruff check: All checks passed.
-Protocol/accounting/package tests: 76 passed.
-Actual Home Assistant 2025.3.4 adapter tests: 17 passed.
-Total: 93 passing tests.
+Local baseline: 76 protocol/package tests and 18 Home Assistant 2025.3.4 tests pass.
+WAN picker regression now validates the displayed options, default value and actual
+HA schema serialization/submission rather than bypassing schema validation.
+CI runs HA adapter tests on 2025.3.4/Python 3.13 and 2026.10.1/Python 3.14.
+See the exact commit check results for current-version verification.
 
-One upstream Home Assistant/aiohttp deprecation warning; no failed tests.
-All test fixture data is synthetic.
-Physical UDM: authenticated counter access is not verified.
-New cases cover nested device objects, classic endpoint discovery, pinned polling
-sources, source-change accounting and retention of non-secret form fields.
+All fixture data is synthetic. Physical UDM: user confirms WAN discovery now
+reaches the interface selector; completed setup is not yet verified.

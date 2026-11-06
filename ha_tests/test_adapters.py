@@ -55,13 +55,46 @@ async def test_config_flow_discovers_selects_and_creates_entry(hass, payload):
             }
         )
     assert result["step_id"] == "interface"
-    result = await flow.async_step_interface({"wan_interface": f"{snap.mac}|eth9"})
+    # Submit through the actual HA schema, rather than skipping its validation.
+    wan = f"{snap.name}: WAN / eth9 ({snap.mac})"
+    submitted = result["data_schema"]({"wan_interface": wan})
+    result = await flow.async_step_interface(submitted)
     assert result["step_id"] == "quota"
     result = await flow.async_step_quota(DEFAULTS.copy())
     assert result["data"]["interface"] == "eth9"
     assert result["data"]["device_endpoint"] == "v2"
     assert result["options"]["quota_gb"] == 100
     client.close.assert_awaited_once()
+
+
+async def test_interface_picker_serialized_labels_defaults_and_submissions(hass, payload):
+    import json
+    import voluptuous as vol
+    from homeassistant.helpers import config_validation as cv
+
+    flow = ConfigFlow()
+    flow.hass = hass
+    flow.context = {"source": "user"}
+    snap = parse_snapshot(payload)
+    flow.interfaces = [snap, replace(snap, interface="eth9", networkgroup="WAN")]
+    result = await flow.async_step_interface()
+    schema = result["data_schema"]
+    try:
+        from probatio import to_field_list
+    except ImportError:
+        from voluptuous_serialize import convert as to_field_list
+    wire = json.loads(json.dumps(to_field_list(schema, custom_serializer=cv.custom_serializer)))
+    field = wire[0]
+    assert field["name"] == "wan_interface"
+    options = field["selector"]["select"]["options"]
+    assert field["selector"]["select"]["mode"] == "list"
+    assert all(isinstance(value, str) for value in options)
+    assert field["default"] in options
+    assert schema({})["wan_interface"] == field["default"]
+    for visible_option in options:
+        assert schema({"wan_interface": visible_option})["wan_interface"] == visible_option
+    with pytest.raises(vol.Invalid):
+        schema({"wan_interface": "not-a-discovered-WAN"})
 
 
 async def test_flow_rejects_auth_and_closes_session(hass):

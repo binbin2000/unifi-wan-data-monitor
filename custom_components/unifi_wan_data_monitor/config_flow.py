@@ -155,7 +155,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_interface(self, user_input=None):
-        choices = {f"{s.mac}|{s.interface}": s for s in self.interfaces}
+        # Keep display and submitted values identical; physical identity remains
+        # MAC/interface in the persisted configuration.
+        choices = {
+            f"{s.name}: {s.networkgroup} / {s.interface} ({s.mac})": s for s in self.interfaces
+        }
         if user_input is not None:
             snap = choices[user_input["wan_interface"]]
             self.connection_data.update(gateway_mac=snap.mac, interface=snap.interface)
@@ -174,14 +178,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required("wan_interface", default=preferred): selector.SelectSelector(
                         selector.SelectSelectorConfig(
-                            options=[
-                                {
-                                    "value": key,
-                                    "label": f"{snap.name}: {snap.networkgroup} / {snap.interface} ({snap.mac})",
-                                }
-                                for key, snap in choices.items()
-                            ],
-                            mode=selector.SelectSelectorMode.DROPDOWN,
+                            options=list(choices),
+                            mode=(
+                                selector.SelectSelectorMode.LIST
+                                if len(choices) <= 6
+                                else selector.SelectSelectorMode.DROPDOWN
+                            ),
                         )
                     ),
                 }
